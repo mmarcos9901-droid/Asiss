@@ -120,6 +120,10 @@ button.danger:hover{background: rgba(251,113,133,.18)}
 .day:hover{background: rgba(255,255,255,.06)}
 .day:active{transform: translateY(1px)}
 .day.muted{opacity:.45; cursor:default}
+.day.selected{
+  outline: 2px solid rgba(124,92,255,.85);
+  outline-offset: 2px;
+}
 
 .num{font-size:14px;font-weight:650}
 .tag{
@@ -208,6 +212,7 @@ a{color:#cdd6ff}
       </div>
       <div class="toolbar">
         <button id="export">Exportar</button>
+        <button id="exportImg" class="primary">Exportar imagen (Word)<\/button>
         <button id="import">Importar</button>
         <button id="copy">Copiar JSON</button>
       </div>
@@ -242,6 +247,19 @@ a{color:#cdd6ff}
         </ol>
       </div>
 
+      <hr style="border:none;border-top:1px solid var(--border);margin:6px 0" />
+      <div>
+        <div class="k" style="margin:6px 0 8px">Ruta del día</div>
+        <div class="small" id="routeDayLabel" style="margin-bottom:8px">Selecciona un día para editar su ruta.</div>
+        <input id="routeInput" type="text" placeholder="Ej: Centro → Norte → Depósito" style="width:100%" />
+        <div class="toolbar" style="margin-top:10px">
+          <button id="saveRoute" class="primary">Guardar ruta</button>
+          <button id="copyPrevRoute">Copiar ruta día anterior</button>
+          <button id="clearRoute" class="danger">Limpiar ruta</button>
+        </div>
+        <div class="small" style="margin-top:8px">Tip: guarda una ruta y luego usa “Copiar ruta día anterior” cuando se repita.</div>
+      </div>
+
       <div>
         <div class="k" style="margin:6px 0 8px">Datos (JSON)</div>
         <textarea id="dataBox" spellcheck="false" placeholder="Aquí verás el JSON al exportar o podrás pegar uno para importar..."></textarea>
@@ -257,7 +275,7 @@ a{color:#cdd6ff}
 
 <div class="footer">
   <div>Hecho para uso personal · Guarda localmente · Sin backend</div>
-  <div>Atajos: <b>←</b>/<b>→</b> mes · <b>H</b> hoy · <b>1</b> trabajado · <b>2</b> feriado · <b>3</b> ausente · <b>0</b> borrar</div>
+  <div>Atajos: <b>←</b>/<b>→</b> mes · <b>H</b> hoy · <b>1</b> trabajado · <b>2</b> feriado · <b>3</b> ausente · <b>0</b> borrar · <b>P</b> exportar imagen</div>
 </div>
 
   </div>  <script>
@@ -275,6 +293,7 @@ a{color:#cdd6ff}
 
     // --- Persistencia ---
     const STORAGE_KEY = 'worked_days_v1';
+    const ROUTES_KEY = 'worked_routes_v1';
     const loadData = () => {
       try{
         const raw = localStorage.getItem(STORAGE_KEY);
@@ -285,7 +304,19 @@ a{color:#cdd6ff}
     }
     const saveData = (obj) => localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
 
+    const loadRoutes = () => {
+      try{
+        const raw = localStorage.getItem(ROUTES_KEY);
+        if(!raw) return {};
+        const obj = JSON.parse(raw);
+        return (obj && typeof obj === 'object') ? obj : {};
+      }catch{return {}};
+    }
+    const saveRoutes = (obj) => localStorage.setItem(ROUTES_KEY, JSON.stringify(obj));
+
     let data = loadData();
+    let routes = loadRoutes();
+    let selectedDateKey = toKey(new Date());
 
     // --- Estado UI ---
     const now = new Date();
@@ -305,6 +336,12 @@ a{color:#cdd6ff}
     const sTotal = $('sTotal');
 
     const dataBox = $('dataBox');
+
+    const routeDayLabel = $('routeDayLabel');
+    const routeInput = $('routeInput');
+    const saveRouteBtn = $('saveRoute');
+    const copyPrevRouteBtn = $('copyPrevRoute');
+    const clearRouteBtn = $('clearRoute');
 
     function setMonth(delta){
       const d = new Date(viewYear, viewMonth + delta, 1);
@@ -327,6 +364,27 @@ a{color:#cdd6ff}
       }
       saveData(data);
       render();
+    }
+
+    function selectDay(dateKey){
+      selectedDateKey = dateKey;
+      if(routeDayLabel) routeDayLabel.textContent = `Día seleccionado: ${dateKey}`;
+      if(routeInput) routeInput.value = routes[dateKey] || '';
+      renderSelectionHighlight();
+    }
+
+    function renderSelectionHighlight(){
+      const cells = calendarEl.querySelectorAll('.day[data-key]');
+      cells.forEach(c => {
+        if(c.getAttribute('data-key') === selectedDateKey) c.classList.add('selected');
+        else c.classList.remove('selected');
+      });
+    }
+
+    function dateMinusOne(key){
+      const d = new Date(key);
+      d.setDate(d.getDate() - 1);
+      return toKey(d);
     }
 
     function render(){
@@ -379,6 +437,7 @@ a{color:#cdd6ff}
       const date = new Date(y, m, d);
       const key = toKey(date);
       const val = data[key];
+      const route = routes[key] || '';
 
       const el = document.createElement('div');
       el.className = 'day' + (muted ? ' muted' : '') + (val ? (' ' + val) : '');
@@ -398,6 +457,19 @@ a{color:#cdd6ff}
         el.appendChild(tag);
       }
 
+      if(route){
+        const r = document.createElement('div');
+        r.style.marginTop = '10px';
+        r.style.fontSize = '12px';
+        r.style.color = 'rgba(232,236,255,0.88)';
+        r.style.lineHeight = '1.25';
+        r.style.maxHeight = '32px';
+        r.style.overflow = 'hidden';
+        r.style.textOverflow = 'ellipsis';
+        r.textContent = route;
+        el.appendChild(r);
+      }
+
       // Hoy (solo si pertenece al mes actual y no muted)
       if(!muted){
         const isToday = (date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate());
@@ -407,11 +479,15 @@ a{color:#cdd6ff}
         }
 
         // Click para marcar
-        el.addEventListener('click', () => markDay(key, modeEl.value));
+        el.addEventListener('click', () => {
+          selectDay(key);
+          markDay(key, modeEl.value);
+        });
 
         // Click derecho para borrar
         el.addEventListener('contextmenu', (e) => {
           e.preventDefault();
+          selectDay(key);
           markDay(key, 'clear');
         });
 
@@ -419,6 +495,7 @@ a{color:#cdd6ff}
         el.addEventListener('keydown', (e) => {
           if(e.key === 'Enter' || e.key === ' '){
             e.preventDefault();
+            selectDay(key);
             markDay(key, modeEl.value);
           }
         });
@@ -427,7 +504,7 @@ a{color:#cdd6ff}
       return el;
     }
 
-    // --- Export / Import ---
+    // --- Export / Import / Imagen ---
     function exportJSON(){
       // Ordenar por fecha para legibilidad
       const entries = Object.entries(data).sort((a,b)=>a[0].localeCompare(b[0]));
@@ -437,78 +514,65 @@ a{color:#cdd6ff}
       return json;
     }
 
-    function importJSON(text){
-      let obj;
-      try{ obj = JSON.parse(text); }
-      catch{ alert('JSON inválido'); return; }
-      if(!obj || typeof obj !== 'object' || Array.isArray(obj)){
-        alert('El JSON debe ser un objeto {"YYYY-MM-DD":"worked"}');
-        return;
+    function exportMonthAsPNG(){
+      // Exportación estilo “Word”: página blanca, texto negro, tabla con bordes.
+      const y = viewYear;
+      const m = viewMonth;
+
+      const first = new Date(y, m, 1);
+      const daysInMonth = new Date(y, m + 1, 0).getDate();
+      const startOffset = dowMon0(first);
+
+      const totalCellsRaw = startOffset + daysInMonth;
+      const tail = (7 - (totalCellsRaw % 7)) % 7;
+      const totalCells = totalCellsRaw + tail;
+      const rows = Math.ceil(totalCells / 7);
+
+      const pad = 44;
+      const gap = 8;
+      const headH = 86;
+      const footH = 40;
+      const cellW = 165;
+      const cellH = 120;
+
+      const width = pad*2 + 7*cellW + 6*gap;
+      const height = pad*2 + headH + rows*cellH + (rows-1)*gap + footH;
+
+      const canvas = document.createElement('canvas');
+      const dpr = Math.max(1, Math.floor(window.devicePixelRatio || 1));
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0,0,width,height);
+
+      ctx.fillStyle = '#111827';
+      ctx.font = '700 28px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial';
+      ctx.fillText(`Días trabajados · ${monthNames[m]} ${y}`, pad, pad + 30);
+
+      const counts = {worked:0, holiday:0, sick:0};
+      for(let day=1; day<=daysInMonth; day++){
+        const key = toKey(new Date(y, m, day));
+        const v = data[key];
+        if(v && counts[v] !== undefined) counts[v]++;
       }
-      // Validación suave
-      const cleaned = {};
-      for(const [k,v] of Object.entries(obj)){
-        if(!/^\d{4}-\d{2}-\d{2}$/.test(k)) continue;
-        if(v === 'worked' || v === 'holiday' || v === 'sick') cleaned[k] = v;
+      const total = counts.worked + counts.holiday + counts.sick;
+      ctx.fillStyle = '#374151';
+      ctx.font = '500 15px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial';
+      ctx.fillText(`Trabajados: ${counts.worked} · Feriados: ${counts.holiday} · Ausentes: ${counts.sick} · Total marcados: ${total}`, pad, pad + 58);
+
+      const week = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+      const gridTop = pad + headH;
+      ctx.fillStyle = '#111827';
+      ctx.font = '700 15px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial';
+      for(let i=0;i<7;i++){
+        const x = pad + i*(cellW+gap);
+        ctx.fillText(week[i], x+8, gridTop-18);
       }
-      data = cleaned;
-      saveData(data);
-      render();
-      alert('Importación aplicada.');
-    }
 
-    // --- Eventos UI ---
-    $('prev').addEventListener('click', () => setMonth(-1));
-    $('next').addEventListener('click', () => setMonth(1));
-    $('today').addEventListener('click', () => setToday());
-
-    $('export').addEventListener('click', () => exportJSON());
-    $('import').addEventListener('click', () => {
-      const json = exportJSON();
-      dataBox.focus();
-      dataBox.setSelectionRange(0, json.length);
-    });
-
-    $('applyImport').addEventListener('click', () => {
-      const text = dataBox.value.trim();
-      if(!text){ alert('Pega un JSON en la caja de texto.'); return; }
-      importJSON(text);
-    });
-
-    $('copy').addEventListener('click', async () => {
-      const json = exportJSON();
-      try{
-        await navigator.clipboard.writeText(json);
-        alert('JSON copiado.');
-      }catch{
-        alert('No pude copiar automáticamente. Copia manualmente desde la caja.');
-      }
-    });
-
-    $('clearAll').addEventListener('click', () => {
-      if(!confirm('¿Seguro que quieres borrar TODOS los datos guardados?')) return;
-      data = {};
-      saveData(data);
-      dataBox.value = '';
-      render();
-    });
-
-    // Atajos teclado
-    window.addEventListener('keydown', (e) => {
-      // Evitar interferir si el foco está en textarea/select
-      const tag = (document.activeElement?.tagName || '').toLowerCase();
-      if(tag === 'textarea' || tag === 'select' || tag === 'input') return;
-
-      if(e.key === 'ArrowLeft') setMonth(-1);
-      if(e.key === 'ArrowRight') setMonth(1);
-      if(e.key.toLowerCase() === 'h') setToday();
-      if(e.key === '1') modeEl.value = 'worked';
-      if(e.key === '2') modeEl.value = 'holiday';
-      if(e.key === '3') modeEl.value = 'sick';
-      if(e.key === '0') modeEl.value = 'clear';
-    });
-
-    // Primer render
-    render();
-  </script></body>
-</html>
+      const fillBy = (val) => {
+        if(val ===
