@@ -1,0 +1,514 @@
+<!doctype html>
+
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Días trabajados · Calendario mensual</title>
+  <style>
+    :root{
+      --bg:#0b1020;
+      --card:#111a33;
+      --card2:#0f1730;
+      --text:#e8ecff;
+      --muted:#a8b2d6;
+      --accent:#7c5cff;
+      --good:#2dd4bf;
+      --warn:#fbbf24;
+      --bad:#fb7185;
+      --border:rgba(255,255,255,.10);
+      --shadow: 0 18px 45px rgba(0,0,0,.45);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      color:var(--text);
+      background: radial-gradient(1200px 600px at 25% -10%, rgba(124,92,255,.35), transparent 55%),
+                  radial-gradient(900px 500px at 85% 10%, rgba(45,212,191,.22), transparent 60%),
+                  linear-gradient(180deg, var(--bg), #070a14 55%, #050610);
+      min-height:100vh;
+      padding:24px;
+    }
+    .wrap{max-width:1000px;margin:0 auto;display:grid;gap:16px}
+    header{
+      display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap
+    }
+    .title{display:grid;gap:6px}
+    h1{font-size:22px;margin:0;letter-spacing:.2px}
+    .sub{color:var(--muted);font-size:13px;line-height:1.35}.card{
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow: var(--shadow);
+  padding:16px;
+}
+
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+button, select, input[type="text"]{
+  appearance:none;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  padding:10px 12px;
+  border-radius: 14px;
+  font-size: 14px;
+  cursor:pointer;
+  transition: transform .05s ease, background .15s ease, border-color .15s ease;
+}
+button:hover, select:hover{background: rgba(255,255,255,.09)}
+button:active{transform: translateY(1px)}
+button.primary{border-color: rgba(124,92,255,.7); background: rgba(124,92,255,.18)}
+button.primary:hover{background: rgba(124,92,255,.24)}
+button.danger{border-color: rgba(251,113,133,.55); background: rgba(251,113,133,.12)}
+button.danger:hover{background: rgba(251,113,133,.18)}
+
+.grid{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap:16px;
+}
+@media (min-width: 900px){
+  .grid{grid-template-columns: 1.6fr .9fr}
+}
+
+.calHead{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap
+}
+.monthLabel{display:flex;align-items:center;gap:12px}
+.monthLabel h2{margin:0;font-size:18px}
+.pill{
+  font-size:12px;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.05);
+  color: var(--muted);
+}
+
+.weekday{
+  display:grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap:8px;
+  margin-top:12px;
+  color: var(--muted);
+  font-size:12px;
+  user-select:none;
+}
+.weekday div{padding:0 6px}
+
+.calendar{
+  display:grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap:8px;
+  margin-top:8px;
+}
+
+.day{
+  position:relative;
+  min-height:74px;
+  border-radius: 16px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.04);
+  padding:10px;
+  cursor:pointer;
+  user-select:none;
+  overflow:hidden;
+  transition: background .15s ease, border-color .15s ease, transform .05s ease;
+}
+.day:hover{background: rgba(255,255,255,.06)}
+.day:active{transform: translateY(1px)}
+.day.muted{opacity:.45; cursor:default}
+
+.num{font-size:14px;font-weight:650}
+.tag{
+  position:absolute; right:10px; top:10px;
+  font-size:11px; padding:4px 8px; border-radius:999px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.06);
+  color: var(--muted);
+}
+
+.day.worked{
+  border-color: rgba(45,212,191,.6);
+  background: linear-gradient(180deg, rgba(45,212,191,.18), rgba(255,255,255,.03));
+}
+.day.worked .tag{color:#cbfff6;border-color: rgba(45,212,191,.55); background: rgba(45,212,191,.12)}
+
+.day.holiday{
+  border-color: rgba(251,191,36,.55);
+  background: linear-gradient(180deg, rgba(251,191,36,.16), rgba(255,255,255,.03));
+}
+
+.day.sick{
+  border-color: rgba(251,113,133,.55);
+  background: linear-gradient(180deg, rgba(251,113,133,.16), rgba(255,255,255,.03));
+}
+
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;color:var(--muted);font-size:12px}
+.dot{width:10px;height:10px;border-radius:999px;display:inline-block;margin-right:7px;vertical-align:middle}
+.dot.work{background: rgba(45,212,191,.85)}
+.dot.hol{background: rgba(251,191,36,.85)}
+.dot.sick{background: rgba(251,113,133,.85)}
+
+.stats{display:grid;gap:10px}
+.statRow{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.k{color:var(--muted);font-size:13px}
+.v{font-weight:700}
+.small{font-size:12px;color:var(--muted);line-height:1.45}
+
+textarea{
+  width:100%;
+  min-height:140px;
+  border-radius: 16px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.04);
+  color: var(--text);
+  padding:12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  outline:none;
+}
+
+.footer{
+  display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;
+  color: var(--muted);
+  font-size:12px;
+  padding-top:6px
+}
+a{color:#cdd6ff}
+
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="title">
+        <h1>Contabilidad de días trabajados</h1>
+        <div class="sub">Marca días como <b>Trabajado</b>, <b>Feriado</b> o <b>Ausente</b>. Todo queda guardado en tu navegador (localStorage). Ideal para publicar en GitHub Pages.</div>
+      </div>
+      <div class="toolbar">
+        <button id="prev">◀</button>
+        <button id="today" class="primary">Hoy</button>
+        <button id="next">▶</button>
+        <select id="mode" title="Modo de marcado">
+          <option value="worked">Marcar: Trabajado</option>
+          <option value="holiday">Marcar: Feriado</option>
+          <option value="sick">Marcar: Ausente</option>
+          <option value="clear">Borrar marca</option>
+        </select>
+      </div>
+    </header><div class="grid">
+  <section class="card" aria-label="Calendario">
+    <div class="calHead">
+      <div class="monthLabel">
+        <h2 id="monthTitle">—</h2>
+        <span class="pill" id="yearPill">—</span>
+      </div>
+      <div class="toolbar">
+        <button id="export">Exportar</button>
+        <button id="import">Importar</button>
+        <button id="copy">Copiar JSON</button>
+      </div>
+    </div>
+
+    <div class="weekday" aria-hidden="true">
+      <div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div>
+    </div>
+    <div id="calendar" class="calendar" role="grid" aria-label="Días del mes"></div>
+
+    <div class="legend" aria-label="Leyenda">
+      <span><span class="dot work"></span>Trabajado</span>
+      <span><span class="dot hol"></span>Feriado</span>
+      <span><span class="dot sick"></span>Ausente</span>
+      <span class="small">Tip: clic en un día para aplicar el modo actual. Clic derecho para borrar.</span>
+    </div>
+  </section>
+
+  <aside class="card" aria-label="Resumen y datos">
+    <div class="stats">
+      <div class="statRow"><div class="k">Trabajados (mes)</div><div class="v" id="sWorked">0</div></div>
+      <div class="statRow"><div class="k">Feriados (mes)</div><div class="v" id="sHoliday">0</div></div>
+      <div class="statRow"><div class="k">Ausentes (mes)</div><div class="v" id="sSick">0</div></div>
+      <div class="statRow"><div class="k">Total marcados</div><div class="v" id="sTotal">0</div></div>
+      <hr style="border:none;border-top:1px solid var(--border);margin:6px 0" />
+      <div class="small">
+        <b>Cómo usar en GitHub:</b>
+        <ol style="margin:8px 0 0 18px; padding:0; line-height:1.5">
+          <li>Crea un repo (por ejemplo <code>dias-trabajados</code>).</li>
+          <li>Sube este archivo como <code>index.html</code>.</li>
+          <li>Ve a <b>Settings → Pages</b> y publica desde <b>main</b> / <b>root</b>.</li>
+        </ol>
+      </div>
+
+      <div>
+        <div class="k" style="margin:6px 0 8px">Datos (JSON)</div>
+        <textarea id="dataBox" spellcheck="false" placeholder="Aquí verás el JSON al exportar o podrás pegar uno para importar..."></textarea>
+        <div class="toolbar" style="margin-top:10px">
+          <button id="applyImport" class="primary">Aplicar importación</button>
+          <button id="clearAll" class="danger">Borrar TODO</button>
+        </div>
+        <div class="small" style="margin-top:8px">Formato: claves por fecha <code>YYYY-MM-DD</code> con valores <code>worked</code>, <code>holiday</code> o <code>sick</code>.</div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<div class="footer">
+  <div>Hecho para uso personal · Guarda localmente · Sin backend</div>
+  <div>Atajos: <b>←</b>/<b>→</b> mes · <b>H</b> hoy · <b>1</b> trabajado · <b>2</b> feriado · <b>3</b> ausente · <b>0</b> borrar</div>
+</div>
+
+  </div>  <script>
+    // --- Utilidades de fecha ---
+    const pad2 = (n) => String(n).padStart(2, '0');
+    const toKey = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+
+    // Semana empezando en lunes (0=Lun..6=Dom)
+    const dowMon0 = (d) => (d.getDay() + 6) % 7;
+
+    const monthNames = [
+      'Enero','Febrero','Marzo','Abril','Mayo','Junio',
+      'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'
+    ];
+
+    // --- Persistencia ---
+    const STORAGE_KEY = 'worked_days_v1';
+    const loadData = () => {
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if(!raw) return {};
+        const obj = JSON.parse(raw);
+        return (obj && typeof obj === 'object') ? obj : {};
+      }catch{return {}};
+    }
+    const saveData = (obj) => localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
+
+    let data = loadData();
+
+    // --- Estado UI ---
+    const now = new Date();
+    let viewYear = now.getFullYear();
+    let viewMonth = now.getMonth(); // 0-11
+
+    const $ = (id) => document.getElementById(id);
+
+    const calendarEl = $('calendar');
+    const monthTitleEl = $('monthTitle');
+    const yearPillEl = $('yearPill');
+    const modeEl = $('mode');
+
+    const sWorked = $('sWorked');
+    const sHoliday = $('sHoliday');
+    const sSick = $('sSick');
+    const sTotal = $('sTotal');
+
+    const dataBox = $('dataBox');
+
+    function setMonth(delta){
+      const d = new Date(viewYear, viewMonth + delta, 1);
+      viewYear = d.getFullYear();
+      viewMonth = d.getMonth();
+      render();
+    }
+
+    function setToday(){
+      viewYear = now.getFullYear();
+      viewMonth = now.getMonth();
+      render();
+    }
+
+    function markDay(dateKey, value){
+      if(value === 'clear'){
+        delete data[dateKey];
+      } else {
+        data[dateKey] = value;
+      }
+      saveData(data);
+      render();
+    }
+
+    function render(){
+      monthTitleEl.textContent = monthNames[viewMonth];
+      yearPillEl.textContent = String(viewYear);
+
+      // Construir días visibles (incluye relleno inicio/fin)
+      const first = new Date(viewYear, viewMonth, 1);
+      const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+      const startOffset = dowMon0(first); // 0..6
+
+      calendarEl.innerHTML = '';
+
+      // Días del mes anterior como relleno
+      const prevMonthDays = new Date(viewYear, viewMonth, 0).getDate();
+      for(let i=0;i<startOffset;i++){
+        const dayNum = prevMonthDays - (startOffset - 1 - i);
+        const el = makeDayCell(viewYear, viewMonth - 1, dayNum, true);
+        calendarEl.appendChild(el);
+      }
+
+      // Días del mes actual
+      for(let day=1; day<=daysInMonth; day++){
+        const el = makeDayCell(viewYear, viewMonth, day, false);
+        calendarEl.appendChild(el);
+      }
+
+      // Relleno final hasta múltiplo de 7 (para cuadrícula completa)
+      const totalCells = calendarEl.children.length;
+      const tail = (7 - (totalCells % 7)) % 7;
+      for(let i=1;i<=tail;i++){
+        const el = makeDayCell(viewYear, viewMonth + 1, i, true);
+        calendarEl.appendChild(el);
+      }
+
+      // Stats del mes
+      const counts = {worked:0, holiday:0, sick:0};
+      for(let day=1; day<=daysInMonth; day++){
+        const key = toKey(new Date(viewYear, viewMonth, day));
+        const v = data[key];
+        if(v && counts[v] !== undefined) counts[v]++;
+      }
+      sWorked.textContent = counts.worked;
+      sHoliday.textContent = counts.holiday;
+      sSick.textContent = counts.sick;
+      sTotal.textContent = counts.worked + counts.holiday + counts.sick;
+    }
+
+    function makeDayCell(y, m, d, muted){
+      const date = new Date(y, m, d);
+      const key = toKey(date);
+      const val = data[key];
+
+      const el = document.createElement('div');
+      el.className = 'day' + (muted ? ' muted' : '') + (val ? (' ' + val) : '');
+      el.setAttribute('role', 'gridcell');
+      el.setAttribute('data-key', key);
+      el.setAttribute('tabindex', muted ? '-1' : '0');
+
+      const num = document.createElement('div');
+      num.className = 'num';
+      num.textContent = String(date.getDate());
+      el.appendChild(num);
+
+      if(val){
+        const tag = document.createElement('div');
+        tag.className = 'tag';
+        tag.textContent = val === 'worked' ? 'Trabajado' : (val === 'holiday' ? 'Feriado' : 'Ausente');
+        el.appendChild(tag);
+      }
+
+      // Hoy (solo si pertenece al mes actual y no muted)
+      if(!muted){
+        const isToday = (date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate());
+        if(isToday){
+          el.style.outline = '2px solid rgba(124,92,255,.65)';
+          el.style.outlineOffset = '2px';
+        }
+
+        // Click para marcar
+        el.addEventListener('click', () => markDay(key, modeEl.value));
+
+        // Click derecho para borrar
+        el.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          markDay(key, 'clear');
+        });
+
+        // Enter/Espacio para marcar
+        el.addEventListener('keydown', (e) => {
+          if(e.key === 'Enter' || e.key === ' '){
+            e.preventDefault();
+            markDay(key, modeEl.value);
+          }
+        });
+      }
+
+      return el;
+    }
+
+    // --- Export / Import ---
+    function exportJSON(){
+      // Ordenar por fecha para legibilidad
+      const entries = Object.entries(data).sort((a,b)=>a[0].localeCompare(b[0]));
+      const obj = Object.fromEntries(entries);
+      const json = JSON.stringify(obj, null, 2);
+      dataBox.value = json;
+      return json;
+    }
+
+    function importJSON(text){
+      let obj;
+      try{ obj = JSON.parse(text); }
+      catch{ alert('JSON inválido'); return; }
+      if(!obj || typeof obj !== 'object' || Array.isArray(obj)){
+        alert('El JSON debe ser un objeto {"YYYY-MM-DD":"worked"}');
+        return;
+      }
+      // Validación suave
+      const cleaned = {};
+      for(const [k,v] of Object.entries(obj)){
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(k)) continue;
+        if(v === 'worked' || v === 'holiday' || v === 'sick') cleaned[k] = v;
+      }
+      data = cleaned;
+      saveData(data);
+      render();
+      alert('Importación aplicada.');
+    }
+
+    // --- Eventos UI ---
+    $('prev').addEventListener('click', () => setMonth(-1));
+    $('next').addEventListener('click', () => setMonth(1));
+    $('today').addEventListener('click', () => setToday());
+
+    $('export').addEventListener('click', () => exportJSON());
+    $('import').addEventListener('click', () => {
+      const json = exportJSON();
+      dataBox.focus();
+      dataBox.setSelectionRange(0, json.length);
+    });
+
+    $('applyImport').addEventListener('click', () => {
+      const text = dataBox.value.trim();
+      if(!text){ alert('Pega un JSON en la caja de texto.'); return; }
+      importJSON(text);
+    });
+
+    $('copy').addEventListener('click', async () => {
+      const json = exportJSON();
+      try{
+        await navigator.clipboard.writeText(json);
+        alert('JSON copiado.');
+      }catch{
+        alert('No pude copiar automáticamente. Copia manualmente desde la caja.');
+      }
+    });
+
+    $('clearAll').addEventListener('click', () => {
+      if(!confirm('¿Seguro que quieres borrar TODOS los datos guardados?')) return;
+      data = {};
+      saveData(data);
+      dataBox.value = '';
+      render();
+    });
+
+    // Atajos teclado
+    window.addEventListener('keydown', (e) => {
+      // Evitar interferir si el foco está en textarea/select
+      const tag = (document.activeElement?.tagName || '').toLowerCase();
+      if(tag === 'textarea' || tag === 'select' || tag === 'input') return;
+
+      if(e.key === 'ArrowLeft') setMonth(-1);
+      if(e.key === 'ArrowRight') setMonth(1);
+      if(e.key.toLowerCase() === 'h') setToday();
+      if(e.key === '1') modeEl.value = 'worked';
+      if(e.key === '2') modeEl.value = 'holiday';
+      if(e.key === '3') modeEl.value = 'sick';
+      if(e.key === '0') modeEl.value = 'clear';
+    });
+
+    // Primer render
+    render();
+  </script></body>
+</html>
