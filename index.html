@@ -1,539 +1,310 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Días trabajados · Calendario mensual</title>
-  <style>
-    :root{
-      --bg:#0b1020;
-      --text:#e8ecff;
-      --muted:#a8b2d6;
-      --accent:#7c5cff;
-      --border:rgba(255,255,255,.10);
-      --shadow: 0 18px 45px rgba(0,0,0,.45);
-      --radius:18px;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-      color:var(--text);
-      background: radial-gradient(1200px 600px at 25% -10%, rgba(124,92,255,.35), transparent 55%),
-                  radial-gradient(900px 500px at 85% 10%, rgba(45,212,191,.22), transparent 60%),
-                  linear-gradient(180deg, var(--bg), #070a14 55%, #050610);
-      min-height:100vh;
-      padding:24px;
-    }
-    .wrap{max-width:1100px;margin:0 auto;display:grid;gap:16px}
-    header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
-    .title{display:grid;gap:6px}
-    h1{font-size:22px;margin:0;letter-spacing:.2px}
-    .sub{color:var(--muted);font-size:13px;line-height:1.35}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App de Asistencia</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #eef2f5;
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .controls, .logo-controls {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .controls input[type="month"] {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        .btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn:hover { background-color: #0056b3; }
+        
+        .btn-export { background-color: #28a745; }
+        .btn-export:hover { background-color: #218838; }
+        
+        .btn-small { padding: 12px 15px; font-size: 18px; }
 
-    .card{
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      box-shadow: var(--shadow);
-      padding:16px;
-    }
+        #document-container {
+            background: white;
+            padding: 30px 20px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px;
+            box-sizing: border-box;
+            margin-top: 10px;
+        }
+        
+        /* Contenedor del Logo */
+        #logo-container {
+            text-align: center;
+            margin-bottom: 15px;
+            min-height: 10px; /* Para que no salte el diseño al subir imagen */
+        }
+        #company-logo {
+            display: none; /* Oculto por defecto */
+            width: 120px; /* Tamaño inicial */
+            height: auto;
+            max-width: 100%;
+        }
 
-    .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    button, select, input[type="text"]{
-      appearance:none;
-      border:1px solid var(--border);
-      background: rgba(255,255,255,.06);
-      color: var(--text);
-      padding:10px 12px;
-      border-radius: 14px;
-      font-size: 14px;
-      cursor:pointer;
-      transition: transform .05s ease, background .15s ease, border-color .15s ease;
-    }
-    input[type="text"]{cursor:text}
-    button:hover, select:hover{background: rgba(255,255,255,.09)}
-    button:active{transform: translateY(1px)}
-    button.primary{border-color: rgba(124,92,255,.7); background: rgba(124,92,255,.18)}
-    button.primary:hover{background: rgba(124,92,255,.24)}
-    button.danger{border-color: rgba(251,113,133,.55); background: rgba(251,113,133,.12)}
-    button.danger:hover{background: rgba(251,113,133,.18)}
+        h2 {
+            text-align: center;
+            margin-top: 0;
+            color: #333;
+            text-transform: uppercase;
+            font-size: 20px;
+        }
+        .header-info {
+            margin-bottom: 20px;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+        .header-info strong {
+            display: inline-block;
+            width: 80px;
+        }
+        /* Estilos de inputs invisibles para que parezca Word */
+        input.clean-input, select.clean-input {
+            border: none;
+            border-bottom: 1px dashed transparent;
+            background: transparent;
+            font-size: 15px;
+            font-family: inherit;
+            color: #333;
+            width: calc(100% - 90px);
+            outline: none;
+        }
+        input.clean-input:focus, input.clean-input:hover {
+            border-bottom: 1px dashed #ccc;
+            background: #f9f9f9;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 6px;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background-color: #f0f0f0;
+        }
+        
+        /* Nuevo estilo para que el texto baje de línea automáticamente */
+        .editable-cell {
+            width: 100%;
+            min-height: 20px;
+            outline: none;
+            word-wrap: break-word; /* Fuerza a que el texto largo baje */
+            white-space: pre-wrap;
+        }
+        .editable-cell:hover, .editable-cell:focus {
+            background: #f9f9f9;
+        }
 
-    .grid{display:grid;grid-template-columns: 1fr;gap:16px}
-    @media (min-width: 900px){.grid{grid-template-columns: 1.6fr .9fr}}
-
-    .calHead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-    .monthLabel{display:flex;align-items:center;gap:12px}
-    .monthLabel h2{margin:0;font-size:18px}
-    .pill{font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);background: rgba(255,255,255,.05);color: var(--muted)}
-
-    .weekday{
-      display:grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap:8px;
-      margin-top:12px;
-      color: var(--muted);
-      font-size:12px;
-      user-select:none;
-    }
-    .weekday div{padding:0 6px}
-
-    .calendar{display:grid;grid-template-columns: repeat(7, 1fr);gap:8px;margin-top:8px}
-
-    .day{
-      position:relative;
-      min-height:86px;
-      border-radius: 16px;
-      border:1px solid var(--border);
-      background: rgba(255,255,255,.04);
-      padding:10px;
-      cursor:pointer;
-      user-select:none;
-      overflow:hidden;
-      transition: background .15s ease, border-color .15s ease, transform .05s ease;
-    }
-    .day:hover{background: rgba(255,255,255,.06)}
-    .day:active{transform: translateY(1px)}
-    .day.muted{opacity:.45; cursor:default}
-    .day.selected{outline:2px solid rgba(124,92,255,.85);outline-offset:2px}
-
-    .num{font-size:14px;font-weight:650}
-    .tag{position:absolute; right:10px; top:10px;font-size:11px; padding:4px 8px; border-radius:999px;border:1px solid var(--border);background: rgba(255,255,255,.06);color: var(--muted)}
-
-    .day.worked{border-color: rgba(45,212,191,.6);background: linear-gradient(180deg, rgba(45,212,191,.18), rgba(255,255,255,.03))}
-    .day.worked .tag{color:#cbfff6;border-color: rgba(45,212,191,.55); background: rgba(45,212,191,.12)}
-
-    .day.holiday{border-color: rgba(251,191,36,.55);background: linear-gradient(180deg, rgba(251,191,36,.16), rgba(255,255,255,.03))}
-    .day.sick{border-color: rgba(251,113,133,.55);background: linear-gradient(180deg, rgba(251,113,133,.16), rgba(255,255,255,.03))}
-
-    .legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;color:var(--muted);font-size:12px}
-    .dot{width:10px;height:10px;border-radius:999px;display:inline-block;margin-right:7px;vertical-align:middle}
-    .dot.work{background: rgba(45,212,191,.85)}
-    .dot.hol{background: rgba(251,191,36,.85)}
-    .dot.sick{background: rgba(251,113,133,.85)}
-
-    .stats{display:grid;gap:10px}
-    .statRow{display:flex;align-items:center;justify-content:space-between;gap:12px}
-    .k{color:var(--muted);font-size:13px}
-    .v{font-weight:700}
-    .small{font-size:12px;color:var(--muted);line-height:1.45}
-
-    textarea{
-      width:100%;
-      min-height:140px;
-      border-radius: 16px;
-      border:1px solid var(--border);
-      background: rgba(255,255,255,.04);
-      color: var(--text);
-      padding:12px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      font-size: 12px;
-      outline:none;
-    }
-
-    .footer{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;color: var(--muted);font-size:12px;padding-top:6px}
-    code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
-  </style>
+        td select {
+            width: 100%;
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            padding: 2px 0;
+        }
+        td select:hover {
+            background: #f9f9f9;
+        }
+        .weekend {
+            background-color: #fafafa;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div class="title">
-        <h1>Contabilidad de días trabajados</h1>
-        <div class="sub">
-          Marca días como <b>Trabajado</b>, <b>Feriado</b> o <b>Ausente</b>.
-          Guarda una <b>ruta</b> por día y copia la del día anterior.
-        </div>
-      </div>
-      <div class="toolbar">
-        <button id="prev">◀</button>
-        <button id="today" class="primary">Hoy</button>
-        <button id="next">▶</button>
-        <select id="mode" title="Modo de marcado">
-          <option value="worked">Marcar: Trabajado</option>
-          <option value="holiday">Marcar: Feriado</option>
-          <option value="sick">Marcar: Ausente</option>
-          <option value="clear">Borrar marca</option>
-        </select>
-      </div>
-    </header>
 
-    <div class="grid">
-      <section class="card">
-        <div class="calHead">
-          <div class="monthLabel">
-            <h2 id="monthTitle">—</h2>
-            <span class="pill" id="yearPill">—</span>
-          </div>
-          <div class="toolbar">
-            <button id="export">Exportar JSON</button>
-            <button id="exportImg" class="primary">Exportar imagen (Word)</button>
-            <button id="import">Importar</button>
-            <button id="copy">Copiar JSON</button>
-          </div>
-        </div>
-
-        <div class="weekday" aria-hidden="true">
-          <div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div>
-        </div>
-        <div id="calendar" class="calendar" role="grid"></div>
-
-        <div class="legend">
-          <span><span class="dot work"></span>Trabajado</span>
-          <span><span class="dot hol"></span>Feriado</span>
-          <span><span class="dot sick"></span>Ausente</span>
-          <span class="small">Clic: selecciona + aplica modo · Clic derecho: borrar</span>
-        </div>
-      </section>
-
-      <aside class="card">
-        <div class="stats">
-          <div class="statRow"><div class="k">Trabajados (mes)</div><div class="v" id="sWorked">0</div></div>
-          <div class="statRow"><div class="k">Feriados (mes)</div><div class="v" id="sHoliday">0</div></div>
-          <div class="statRow"><div class="k">Ausentes (mes)</div><div class="v" id="sSick">0</div></div>
-          <div class="statRow"><div class="k">Total marcados</div><div class="v" id="sTotal">0</div></div>
-
-          <hr style="border:none;border-top:1px solid var(--border);margin:6px 0" />
-
-          <div>
-            <div class="k" style="margin:6px 0 8px">Ruta del día</div>
-            <div class="small" id="routeDayLabel" style="margin-bottom:8px">Selecciona un día para editar su ruta.</div>
-            <input id="routeInput" type="text" placeholder="Ej: Centro → Norte → Depósito" style="width:100%" />
-            <div class="toolbar" style="margin-top:10px">
-              <button id="saveRoute" class="primary">Guardar ruta</button>
-              <button id="copyPrevRoute">Copiar ruta día anterior</button>
-              <button id="clearRoute" class="danger">Limpiar ruta</button>
-            </div>
-            <div class="small" style="margin-top:8px">Atajo: <b>C</b> copia ruta anterior · <b>P</b> exporta imagen.</div>
-          </div>
-
-          <hr style="border:none;border-top:1px solid var(--border);margin:6px 0" />
-
-          <div>
-            <div class="k" style="margin:6px 0 8px">Datos (JSON)</div>
-            <textarea id="dataBox" spellcheck="false" placeholder="Exporta para ver el JSON o pega aquí para importar..."></textarea>
-            <div class="toolbar" style="margin-top:10px">
-              <button id="applyImport" class="primary">Aplicar importación</button>
-              <button id="clearAll" class="danger">Borrar TODO</button>
-            </div>
-            <div class="small" style="margin-top:8px">Export v2 incluye <code>days</code> y <code>routes</code>.</div>
-          </div>
-        </div>
-      </aside>
+    <div class="controls">
+        <input type="month" id="monthPicker" onchange="generateTable()">
+        <button class="btn btn-export" onclick="exportToImage()">Exportar Imagen</button>
     </div>
 
-    <div class="footer">
-      <div>Hecho para GitHub Pages · Sin backend</div>
-      <div>Atajos: ←/→ mes · H hoy · 1/2/3 estado · 0 borrar · P exportar imagen · C copiar ruta anterior</div>
+    <div class="logo-controls">
+        <input type="file" id="logoInput" accept="image/*" style="display: none;" onchange="loadLogo(event)">
+        <button class="btn" style="flex: 1;" onclick="document.getElementById('logoInput').click()">📁 Subir Logo de Empresa</button>
+        <button class="btn btn-small" onclick="resizeLogo(15)">+</button>
+        <button class="btn btn-small" onclick="resizeLogo(-15)">-</button>
     </div>
-  </div>
 
-  <script>
-    // ===== Utils fecha =====
-    const pad2 = (n) => String(n).padStart(2, '0');
-    const toKey = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
-    const dowMon0 = (d) => (d.getDay() + 6) % 7; // 0=Lun..6=Dom
-    const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    <div id="document-container">
+        
+        <div id="logo-container">
+            <img id="company-logo" alt="Logo de la empresa">
+        </div>
 
-    // ===== Storage =====
-    const STORAGE_KEY = 'worked_days_v1';
-    const ROUTES_KEY  = 'worked_routes_v1';
+        <h2>Registro de Asistencia y Ruta</h2>
+        
+        <div class="header-info">
+            <strong>Mes:</strong> <input type="text" id="displayMonth" class="clean-input" value="Febrero 2026"><br>
+            <strong>Nombre:</strong> <input type="text" class="clean-input" value="Marcos Méndez"><br>
+            <strong>Cargo:</strong> <input type="text" class="clean-input" value="Conductor"><br>
+            <strong>Empresa:</strong> <input type="text" class="clean-input" value="Transportes Uribe"><br>
+            <strong>Jornada:</strong> <input type="text" class="clean-input" value="Lunes a Viernes">
+        </div>
 
-    const loadJSON = (key, fallback) => {
-      try{
-        const raw = localStorage.getItem(key);
-        if(!raw) return fallback;
-        const obj = JSON.parse(raw);
-        return (obj && typeof obj === 'object') ? obj : fallback;
-      }catch{ return fallback; }
-    };
-    const saveJSON = (key, obj) => localStorage.setItem(key, JSON.stringify(obj));
+        <table>
+            <thead>
+                <tr>
+                    <th width="15%">Fecha</th>
+                    <th width="15%">Día</th>
+                    <th width="45%">Ruta</th> 
+                    <th width="25%">Estado</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+        </table>
+    </div>
 
-    let data = loadJSON(STORAGE_KEY, {});   // {"YYYY-MM-DD": "worked"|"holiday"|"sick"}
-    let routes = loadJSON(ROUTES_KEY, {});  // {"YYYY-MM-DD": "ruta"}
+    <script>
+        const daysInSpanish = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        const monthsInSpanish = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
-    // ===== Estado UI =====
-    const now = new Date();
-    let viewYear = now.getFullYear();
-    let viewMonth = now.getMonth();
-    let selectedDateKey = toKey(now);
+        // --- Funciones del Logo ---
+        let currentLogoWidth = 120; // Tamaño inicial en píxeles
 
-    // ===== DOM =====
-    const $ = (id) => document.getElementById(id);
-
-    const calendarEl = $('calendar');
-    const monthTitleEl = $('monthTitle');
-    const yearPillEl = $('yearPill');
-    const modeEl = $('mode');
-
-    const sWorked = $('sWorked');
-    const sHoliday = $('sHoliday');
-    const sSick = $('sSick');
-    const sTotal = $('sTotal');
-
-    const dataBox = $('dataBox');
-
-    const routeDayLabel = $('routeDayLabel');
-    const routeInput = $('routeInput');
-    const saveRouteBtn = $('saveRoute');
-    const copyPrevRouteBtn = $('copyPrevRoute');
-    const clearRouteBtn = $('clearRoute');
-
-    // ===== Selección + rutas =====
-    function selectDay(dateKey){
-      selectedDateKey = dateKey;
-      routeDayLabel.textContent = `Día seleccionado: ${dateKey}`;
-      routeInput.value = routes[dateKey] || '';
-      renderSelectionHighlight();
-    }
-
-    function renderSelectionHighlight(){
-      const cells = calendarEl.querySelectorAll('.day[data-key]');
-      cells.forEach(c => {
-        c.classList.toggle('selected', c.getAttribute('data-key') === selectedDateKey);
-      });
-    }
-
-    function dateMinusOne(key){
-      const d = new Date(key);
-      d.setDate(d.getDate() - 1);
-      return toKey(d);
-    }
-
-    // ===== Navegación =====
-    function setMonth(delta){
-      const d = new Date(viewYear, viewMonth + delta, 1);
-      viewYear = d.getFullYear();
-      viewMonth = d.getMonth();
-      selectedDateKey = toKey(new Date(viewYear, viewMonth, 1));
-      render();
-      selectDay(selectedDateKey);
-    }
-
-    function setToday(){
-      viewYear = now.getFullYear();
-      viewMonth = now.getMonth();
-      selectedDateKey = toKey(now);
-      render();
-      selectDay(selectedDateKey);
-    }
-
-    // ===== Marcado =====
-    function markDay(dateKey, value){
-      if(value === 'clear') delete data[dateKey];
-      else data[dateKey] = value;
-      saveJSON(STORAGE_KEY, data);
-      render();
-      renderSelectionHighlight();
-    }
-
-    // ===== Render calendario =====
-    function render(){
-      monthTitleEl.textContent = monthNames[viewMonth];
-      yearPillEl.textContent = String(viewYear);
-
-      const first = new Date(viewYear, viewMonth, 1);
-      const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-      const startOffset = dowMon0(first);
-
-      calendarEl.innerHTML = '';
-
-      const prevMonthDays = new Date(viewYear, viewMonth, 0).getDate();
-      for(let i=0;i<startOffset;i++){
-        const dayNum = prevMonthDays - (startOffset - 1 - i);
-        calendarEl.appendChild(makeDayCell(viewYear, viewMonth - 1, dayNum, true));
-      }
-
-      for(let day=1; day<=daysInMonth; day++){
-        calendarEl.appendChild(makeDayCell(viewYear, viewMonth, day, false));
-      }
-
-      const totalCells = calendarEl.children.length;
-      const tail = (7 - (totalCells % 7)) % 7;
-      for(let i=1;i<=tail;i++){
-        calendarEl.appendChild(makeDayCell(viewYear, viewMonth + 1, i, true));
-      }
-
-      const counts = {worked:0, holiday:0, sick:0};
-      for(let day=1; day<=daysInMonth; day++){
-        const key = toKey(new Date(viewYear, viewMonth, day));
-        const v = data[key];
-        if(v && counts[v] !== undefined) counts[v]++;
-      }
-      sWorked.textContent = counts.worked;
-      sHoliday.textContent = counts.holiday;
-      sSick.textContent = counts.sick;
-      sTotal.textContent = counts.worked + counts.holiday + counts.sick;
-
-      renderSelectionHighlight();
-    }
-
-    function makeDayCell(y, m, d, muted){
-      const date = new Date(y, m, d);
-      const key = toKey(date);
-      const val = data[key];
-      const route = routes[key] || '';
-
-      const el = document.createElement('div');
-      el.className = 'day' + (muted ? ' muted' : '') + (val ? (' ' + val) : '');
-      el.setAttribute('data-key', key);
-      el.setAttribute('role', 'gridcell');
-
-      const num = document.createElement('div');
-      num.className = 'num';
-      num.textContent = String(date.getDate());
-      el.appendChild(num);
-
-      if(val){
-        const tag = document.createElement('div');
-        tag.className = 'tag';
-        tag.textContent = val === 'worked' ? 'Trabajado' : (val === 'holiday' ? 'Feriado' : 'Ausente');
-        el.appendChild(tag);
-      }
-
-      if(route){
-        const r = document.createElement('div');
-        r.style.marginTop = '10px';
-        r.style.fontSize = '12px';
-        r.style.color = 'rgba(232,236,255,0.88)';
-        r.style.lineHeight = '1.25';
-        r.style.maxHeight = '32px';
-        r.style.overflow = 'hidden';
-        r.style.textOverflow = 'ellipsis';
-        r.textContent = route;
-        el.appendChild(r);
-      }
-
-      if(!muted){
-        el.tabIndex = 0;
-
-        const isToday = (date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate());
-        if(isToday){
-          el.style.outline = '2px solid rgba(124,92,255,.65)';
-          el.style.outlineOffset = '2px';
+        function loadLogo(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.getElementById('company-logo');
+                    img.src = e.target.result;
+                    img.style.display = 'inline-block'; // Lo hace visible
+                    img.style.width = currentLogoWidth + 'px'; // Aplica el tamaño
+                }
+                reader.readAsDataURL(file);
+            }
         }
 
-        el.addEventListener('click', () => {
-          selectDay(key);
-          markDay(key, modeEl.value);
-        });
-
-        el.addEventListener('contextmenu', (e) => {
-          e.preventDefault();
-          selectDay(key);
-          markDay(key, 'clear');
-        });
-
-        el.addEventListener('keydown', (e) => {
-          if(e.key === 'Enter' || e.key === ' '){
-            e.preventDefault();
-            selectDay(key);
-            markDay(key, modeEl.value);
-          }
-        });
-      }
-
-      return el;
-    }
-
-    // ===== Export/Import JSON =====
-    function exportJSON(){
-      const days = Object.entries(data)
-        .filter(([k,v]) => v)
-        .sort((a,b)=>a[0].localeCompare(b[0]));
-
-      const payload = {
-        version: 2,
-        month: `${viewYear}-${pad2(viewMonth+1)}`,
-        days: Object.fromEntries(days),
-        routes: Object.fromEntries(Object.entries(routes).filter(([k,v]) => v && String(v).trim()))
-      };
-
-      const json = JSON.stringify(payload, null, 2);
-      dataBox.value = json;
-      return json;
-    }
-
-    function importJSON(text){
-      let obj;
-      try{ obj = JSON.parse(text); }
-      catch{ alert('JSON inválido'); return; }
-
-      if(obj && typeof obj === 'object' && obj.version === 2){
-        const nd = {};
-        const nr = {};
-        const days = obj.days && typeof obj.days === 'object' ? obj.days : {};
-        const rts  = obj.routes && typeof obj.routes === 'object' ? obj.routes : {};
-
-        for(const [k,v] of Object.entries(days)){
-          if(!/^\d{4}-\d{2}-\d{2}$/.test(k)) continue;
-          if(v === 'worked' || v === 'holiday' || v === 'sick') nd[k] = v;
+        function resizeLogo(change) {
+            const img = document.getElementById('company-logo');
+            if (img.src && img.style.display !== 'none') {
+                currentLogoWidth += change;
+                if (currentLogoWidth < 30) currentLogoWidth = 30; // Tamaño mínimo
+                if (currentLogoWidth > 500) currentLogoWidth = 500; // Tamaño máximo
+                img.style.width = currentLogoWidth + 'px';
+            }
         }
-        for(const [k,v] of Object.entries(rts)){
-          if(!/^\d{4}-\d{2}-\d{2}$/.test(k)) continue;
-          if(typeof v === 'string' && v.trim()) nr[k] = v.trim();
+        // --------------------------
+
+        function setInitialMonth() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            document.getElementById('monthPicker').value = `${year}-${month}`;
+            generateTable();
         }
 
-        data = nd;
-        routes = nr;
-        saveJSON(STORAGE_KEY, data);
-        saveJSON(ROUTES_KEY, routes);
-        render();
-        selectDay(selectedDateKey);
-        alert('Importación aplicada.');
-        return;
-      }
+        function generateTable() {
+            const monthPicker = document.getElementById('monthPicker').value;
+            if (!monthPicker) return;
 
-      // formato antiguo: {"YYYY-MM-DD":"worked"}
-      if(!obj || typeof obj !== 'object' || Array.isArray(obj)){
-        alert('El JSON debe ser un objeto o un export v2.');
-        return;
-      }
-      const cleaned = {};
-      for(const [k,v] of Object.entries(obj)){
-        if(!/^\d{4}-\d{2}-\d{2}$/.test(k)) continue;
-        if(v === 'worked' || v === 'holiday' || v === 'sick') cleaned[k] = v;
-      }
-      data = cleaned;
-      saveJSON(STORAGE_KEY, data);
-      render();
-      selectDay(selectedDateKey);
-      alert('Importación aplicada (v1).');
-    }
+            const [year, month] = monthPicker.split('-');
+            const date = new Date(year, month - 1, 1);
+            const totalDays = new Date(year, month, 0).getDate();
+            
+            // Actualizar el título del mes
+            document.getElementById('displayMonth').value = `${monthsInSpanish[date.getMonth()]} ${year}`;
 
-    // ===== Export imagen estilo Word =====
-    function exportMonthAsPNG(){
-      const y = viewYear;
-      const m = viewMonth;
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
 
-      const first = new Date(y, m, 1);
-      const daysInMonth = new Date(y, m + 1, 0).getDate();
-      const startOffset = dowMon0(first);
+            for (let i = 1; i <= totalDays; i++) {
+                const currentDate = new Date(year, month - 1, i);
+                const dayOfWeek = currentDate.getDay();
+                const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+                
+                const tr = document.createElement('tr');
+                if (isWeekend) tr.className = 'weekend';
 
-      const totalCellsRaw = startOffset + daysInMonth;
-      const tail = (7 - (totalCellsRaw % 7)) % 7;
-      const totalCells = totalCellsRaw + tail;
-      const rows = Math.ceil(totalCells / 7);
+                // Valores por defecto
+                const routeValue = isWeekend ? '-' : 'San Miguel';
+                
+                // Opciones del select de estado
+                const statusOptions = `
+                    <option value="Presente" ${!isWeekend ? 'selected' : ''}>Presente</option>
+                    <option value="Descanso" ${isWeekend ? 'selected' : ''}>Descanso</option>
+                    <option value="Ausente">Ausente</option>
+                    <option value="Feriado">Feriado</option>
+                `;
 
-      const pad = 44, gap = 8, headH = 86, footH = 40;
-      const cellW = 165, cellH = 120;
+                tr.innerHTML = `
+                    <td>${String(i).padStart(2, '0')}-${month}</td>
+                    <td>${daysInSpanish[dayOfWeek]}</td>
+                    <td><div contenteditable="true" class="editable-cell">${routeValue}</div></td>
+                    <td>
+                        <select>
+                            ${statusOptions}
+                        </select>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            }
+        }
 
-      const width = pad*2 + 7*cellW + 6*gap;
-      const height = pad*2 + headH + rows*cellH + (rows-1)*gap + footH;
+        function exportToImage() {
+            const element = document.getElementById('document-container');
+            const btn = document.querySelector('.btn-export');
+            
+            // Efecto visual de cargando
+            btn.innerText = "Generando...";
+            btn.style.backgroundColor = "#6c757d";
 
-      const canvas = document.createElement('canvas');
-      const dpr = Math.max(1, Math.floor(window.devicePixelRatio || 1));
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
-      const ctx = canvas.getContext('2d');
-      ctx.scale(dpr, dpr);
+            html2canvas(element, { scale: 2 }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `Asistencia_${document.getElementById('displayMonth').value.replace(/ /g, '_')}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+                // Restaurar botón
+                btn.innerText = "Exportar Imagen";
+                btn.style.backgroundColor = "#28a745";
+            });
+        }
 
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0,0,width,height);
+        // Cargar el mes actual al iniciar
+        setInitialMonth();
+    </script>
 
-      ctx.fillStyle = '#111827';
-      ctx.font = '700 28px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial';
-      ctx.fillText(`Días trabajados · ${monthNames[m]} ${y}`, pad, pad + 30);
-
-      const counts = {worked:0, holiday:0, sick:0};
-      for(le
+</body>
+</html>
